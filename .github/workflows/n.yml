@@ -1,0 +1,63 @@
+name: Build TWRP from OPPO R11
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build TWRP from OPPO R11
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Get branch names.
+        id: branch-names
+        uses: tj-actions/branch-names@v8
+
+      - name: Set SWAP to 5GiB
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 5
+
+      - name: Initialize compilation environment
+        run: |
+          sudo apt update
+          sudo apt upgrade
+          sudo apt install bc bison build-essential ccache curl flex g++-multilib gcc-multilib git git-lfs gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+          mkdir ~/bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          sudo ln -sf ~/bin/repo /usr/bin/repo
+          mkdir -p $GITHUB_WORKSPACE/workdir
+          cd $GITHUB_WORKSPACE/workdir          
+
+      - name: Initialize Repo
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/workdir/android-recovery
+          cd $GITHUB_WORKSPACE/workdir/android-recovery
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"           
+          repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b twrp-11
+
+      - name: Repo Sync
+        run: |
+          cd android-recovery
+          repo sync -j$(nproc --all) --force-sync
+
+      - name: Clone Source
+        run: |
+          git clone https://github.com/mihoy3rd/oppo.git --depth 1 -b $GITHUB_WORKSPACE/workdir/android-recovery/device/oppo/
+
+      - name: Building Image 
+        run: |
+          cd $GITHUB_WORKSPACE/workdir/android-recovery
+          source build/envsetup.sh
+          export ALLOW_MISSING_DEPENDENCIES=true
+          lunch R11-eng && make clean && make recoveryimage -j$(nproc --all)
+          echo "Done building your recovery.img"
+
+    - name: Upload to Release
+      if: success()
+      uses: softprops/action-gh-release@master
+      with:
+        files: |
+          android-recovery/out/target/product/R11/recovery.img
