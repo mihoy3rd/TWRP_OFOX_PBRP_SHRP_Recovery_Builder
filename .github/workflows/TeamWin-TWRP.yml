@@ -150,10 +150,10 @@ jobs:
       uses: softprops/action-gh-release@master
       with:
         files: |
-          android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/${{ inputs.BUILD_TARGET }}.img
-          android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/*installer*zip
-          android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/ramdisk-recovery.*
-          android-recovery/out/target/product/${{ inputs.DEVICE_NAME }}/vbmeta.*
+          android-recovery/out/target/product/R11/${{ inputs.BUILD_TARGET }}.img
+          android-recovery/out/target/product/R11/*installer*zip
+          android-recovery/out/target/product/R11/ramdisk-recovery.*
+          android-recovery/out/target/product/R11/vbmeta.*
         name: Unofficial TWRP for ${{ inputs.DEVICE_NAME }} // ${{ env.BUILD_DATE }}
         tag_name: ${{ github.run_id }}
         body: |
